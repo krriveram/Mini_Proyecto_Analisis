@@ -4,7 +4,7 @@ import sys
 import time
 import streamlit as st
 
-sys.setrecursionlimit(10000)
+#sys.setrecursionlimit(10000)
 
 st.set_page_config(
     page_title="Mini Proyecto",
@@ -21,7 +21,7 @@ st.markdown("""
 
 # MERGESORT
 # LO RECUPERAMOS DE https://www.geeksforgeeks.org/python/python-program-for-merge-sort/
-def merge(arr, l, m, r):
+def merge(arr, l, m, r,pasos=None): #esto es para cuando n<=10
     n1 = m - l + 1
     n2 = r - m
 
@@ -53,17 +53,19 @@ def merge(arr, l, m, r):
         arr[k] = R[j]
         j += 1
         k += 1
+    if pasos is not None:
+        pasos.append(f"Mezcla [{l}..{r}] → {arr.copy()}")
 
-def mergeSort(arr, l, r):
+def mergeSort(arr, l, r,pasos=None):
     if l < r:
         m = l + (r - l) // 2
-        mergeSort(arr, l, m)
-        mergeSort(arr, m + 1, r)
-        merge(arr, l, m, r)
+        mergeSort(arr, l, m,pasos)
+        mergeSort(arr, m + 1, r,pasos)
+        merge(arr, l, m, r,pasos)
 
 # QUICKSORT 
 # LO RECUPERAMOS DE https://www.geeksforgeeks.org/dsa/python-program-for-quicksort/ 
-def partition(arr, low, high):
+def partition(arr, low, high,pasos=None):
     pivot = arr[high]
     i = low - 1
     for j in range(low, high):
@@ -71,13 +73,15 @@ def partition(arr, low, high):
             i += 1
             arr[i], arr[j] = arr[j], arr[i]
     arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    if pasos is not None:
+        pasos.append(f"Pivote={pivot} en índice {i + 1} (rango [{low}..{high}]) → {arr.copy()}")
     return i + 1
 
-def quick_sort(arr, low, high):
+def quick_sort(arr, low, high,pasos=None):
     if low < high:
-        p = partition(arr, low, high)
-        quick_sort(arr, low, p - 1)
-        quick_sort(arr, p + 1, high)
+        p = partition(arr, low, high, pasos)
+        quick_sort(arr, low, p - 1, pasos)
+        quick_sort(arr, p + 1, high, pasos)
 
 # HEAPSORT
 # LO RECUPERAMOS DE https://www.geeksforgeeks.org/dsa/python-program-for-heap-sort/ 
@@ -96,15 +100,18 @@ def heapify(arr, n, i):
         arr[i], arr[largest] = arr[largest], arr[i]
         heapify(arr, n, largest)
 
-def heapSort(arr):
+def heapSort(arr, pasos=None):
     n = len(arr)
-
     for i in range(n // 2 - 1, -1, -1):
         heapify(arr, n, i)
+    if pasos is not None:
+        pasos.append(f"Max-Heap inicial → {arr.copy()}")
 
     for i in range(n - 1, 0, -1):
         arr[i], arr[0] = arr[0], arr[i]
         heapify(arr, i, 0)
+        if pasos is not None:
+            pasos.append(f"Extrae máximo {arr[i]} → {arr.copy()}")
 
 #esto es para que se pueda ver directamente en formato cientifico :D
 def formato_cientifico(valor, decimales=4):
@@ -112,7 +119,6 @@ def formato_cientifico(valor, decimales=4):
     superindices = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
     exp_limpio = str(int(exp)).translate(superindices)
     return f"{base}×10{exp_limpio}"
-
 
 # --- INTERFAZ ---
 st.title("Ordenador de Arreglos")
@@ -158,7 +164,7 @@ elif origen == "Subir archivo (.txt / .csv)":
 else:
     col1, col2, col3 = st.columns(3)
     with col1:
-        cantidad = st.number_input("Cantidad de números:", min_value=0, max_value=5000, value=0, step=1)
+        cantidad = st.number_input("Cantidad de números:", min_value=0, max_value=100000, value=0, step=1)
         key="cant_aleatoria"
     with col2:
         min_val = st.number_input("Valor mínimo:", value=1, step=1)
@@ -212,22 +218,33 @@ if st.button("Ordenar", type="primary"):
             copia_arr = arr.copy()
             inicio = time.perf_counter()
 
-            match metodo:
-                case "MergeSort":
-                    mergeSort(copia_arr, 0, len(copia_arr) - 1)
-                case "QuickSort":
-                    quick_sort(copia_arr, 0, len(copia_arr) - 1)
-                case "HeapSort":
-                    heapSort(copia_arr)
+            try:
+                match metodo:
+                    case "MergeSort":
+                        mergeSort(copia_arr, 0, len(copia_arr) - 1)
+                    case "QuickSort":
+                        quick_sort(copia_arr, 0, len(copia_arr) - 1)
+                    case "HeapSort":
+                        heapSort(copia_arr)
 
-            tiempo_s = time.perf_counter() - inicio
-            resultados_por_metodo[metodo] = copia_arr
+                tiempo_s = time.perf_counter() - inicio
+                resultados_por_metodo[metodo] = copia_arr
+                cols_tiempos[i].metric(
+                    label=f"Método {nombres_metodos[metodo]}",
+                    value=f"{formato_cientifico(tiempo_s)} s"
+                )
 
-            cols_tiempos[i].metric(
-                label=f"Método {nombres_metodos[metodo]}",
-                value=f"{formato_cientifico(tiempo_s)}s"
-            )
-            
+            except RecursionError:
+                cols_tiempos[i].metric(
+                    label=f"Método {nombres_metodos[metodo]}",
+                    value="RecursionError"
+                )
+                st.error(
+                    f"**{nombres_metodos[metodo]}** superó el límite máximo de recursión de Python con "
+                    f"$n={len(arr)}$. Causa: elegir el último elemento como pivote (`arr[high]`) genera "
+                    f"particiones totalmente desequilibradas de profundidad $O(n)$."
+                )
+
         listas_ordenadas = list(resultados_por_metodo.values())
         todos_iguales = all(res == listas_ordenadas[0] for res in listas_ordenadas)
         orden_correcto = listas_ordenadas[0] == sorted(arr)
@@ -242,7 +259,30 @@ if st.button("Ordenar", type="primary"):
 
         #st.success(f"Arreglo ordenado ({len(resultado_final)} elementos):")
         #st.code(str(resultado_final), language="python")
+        if len(arr) <= 10:
+                        with st.expander("Ver prueba funcional paso a paso", expanded=False):
+                            st.write(f"**Datos iniciales:** `{arr}`")
 
+                            for metodo in metodos_seleccionados:
+                                if metodo not in resultados_por_metodo:
+                                    continue
+                                pasos = []
+                                copia_traza = arr.copy()
+
+                                match metodo:
+                                    case "MergeSort":
+                                        mergeSort(copia_traza, 0, len(copia_traza) - 1, pasos)
+                                    case "QuickSort":
+                                        quick_sort(copia_traza, 0, len(copia_traza) - 1, pasos)
+                                    case "HeapSort":
+                                        heapSort(copia_traza, pasos)
+                                st.text("")        
+                                st.markdown(f"**>>{nombres_metodos[metodo]}:**")
+                                for num_paso, estado in enumerate(pasos, 1):
+                                    st.text(f"    Paso {num_paso}: {estado}")
+                                    
+
+        #st.write(f"**Resultado final:** `{listas_ordenadas[0]}`")
        
 
         st.download_button(
@@ -252,7 +292,7 @@ if st.button("Ordenar", type="primary"):
             mime="text/plain"
         )
 st.divider()
-if st.button("Finalizar y limpiar datos",type="primary"):
+if st.button("Finalizar y limpiar datos"):
     nuevo_id = st.session_state.get("uploader_id", 0) + 1
     st.session_state.clear()
     st.session_state["uploader_id"] = nuevo_id
@@ -264,4 +304,3 @@ if st.button("Finalizar y limpiar datos",type="primary"):
 
 if st.session_state.pop("sesion_finalizada", False):
     st.info("Sesión finalizada y datos reiniciados. Puedes cerrar esta pestaña o comenzar una nueva prueba.")
-
