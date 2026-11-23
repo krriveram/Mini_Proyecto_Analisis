@@ -244,7 +244,7 @@ if st.button("Ordenar", type="primary"):
             mime="text/plain"
         )
 st.divider()
-if st.button("Finalizar y limpiar datos"):
+if st.button("Finalizar y limpiar datos",type="primary"):
     nuevo_id = st.session_state.get("uploader_id", 0) + 1
     st.session_state.clear()
     st.session_state["uploader_id"] = nuevo_id
