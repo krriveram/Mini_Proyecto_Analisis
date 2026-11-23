@@ -277,9 +277,9 @@ if st.button("Ordenar", type="primary"):
                                     case "HeapSort":
                                         heapSort(copia_traza, pasos)
                                 st.text("")        
-                                st.markdown(f"**>>{nombres_metodos[metodo]}:**")
+                                st.markdown(f"**>>>{nombres_metodos[metodo]}:**")
                                 for num_paso, estado in enumerate(pasos, 1):
-                                    st.text(f"    **Paso {num_paso}**: {estado}")
+                                    st.text(f"    >Paso {num_paso}: {estado}")
                                     
 
         #st.write(f"**Resultado final:** `{listas_ordenadas[0]}`")
@@ -304,4 +304,5 @@ if st.button("Finalizar y limpiar datos"):
 
 if st.session_state.pop("sesion_finalizada", False):
     st.info("Sesión finalizada y datos reiniciados. Puedes cerrar esta pestaña o comenzar una nueva prueba.")
+
 
