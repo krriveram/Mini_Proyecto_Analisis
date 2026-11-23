@@ -106,6 +106,13 @@ def heapSort(arr):
         arr[i], arr[0] = arr[0], arr[i]
         heapify(arr, i, 0)
 
+#esto es para que se pueda ver directamente en formato cientifico :D
+def formato_cientifico(valor, decimales=4):
+    base, exp = f"{valor:.{decimales}e}".split("e")
+    superindices = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
+    exp_limpio = str(int(exp)).translate(superindices)
+    return f"{base}×10{exp_limpio}"
+
 
 # --- INTERFAZ ---
 st.title("Ordenador de Arreglos")
@@ -213,13 +220,14 @@ if st.button("Ordenar", type="primary"):
                 case "HeapSort":
                     heapSort(copia_arr)
 
-            tiempo_ms = (time.perf_counter() - inicio) * 1000
+            tiempo_s = time.perf_counter() - inicio
             resultados_por_metodo[metodo] = copia_arr
 
             cols_tiempos[i].metric(
                 label=f"Método {nombres_metodos[metodo]}",
-                value=f"{tiempo_ms:.4f} ms"
+                value=f"{formato_cientifico(tiempo_s)}s"
             )
+            
         listas_ordenadas = list(resultados_por_metodo.values())
         todos_iguales = all(res == listas_ordenadas[0] for res in listas_ordenadas)
         orden_correcto = listas_ordenadas[0] == sorted(arr)
@@ -256,3 +264,4 @@ if st.button("Finalizar y limpiar datos",type="primary"):
 
 if st.session_state.pop("sesion_finalizada", False):
     st.info("Sesión finalizada y datos reiniciados. Puedes cerrar esta pestaña o comenzar una nueva prueba.")
+
