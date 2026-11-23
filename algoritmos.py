@@ -110,10 +110,14 @@ def heapSort(arr):
 # --- INTERFAZ ---
 st.title("Ordenador de Arreglos")
 
+if "uploader_id" not in st.session_state:
+    st.session_state["uploader_id"] = 0
+
 origen = st.radio(
     "¿Cómo deseas ingresar los datos?",
     ["Escribir manualmente", "Subir archivo (.txt / .csv)", "Generar aleatorios"],
-    horizontal=True
+    horizontal=True,
+    key="origen_datos"
 )
 
 arr = []
@@ -136,7 +140,8 @@ if origen == "Escribir manualmente":
 elif origen == "Subir archivo (.txt / .csv)":
     archivo = st.file_uploader(
         "Sube un archivo con números (separados por comas, espacios o saltos de línea):",
-        type=["txt", "csv"]
+        type=["txt", "csv"],
+        key=f"cargardatos_{st.session_state['uploader_id']}"
     )
     if archivo is not None:
         contenido = archivo.read().decode("utf-8")
@@ -147,6 +152,7 @@ else:
     col1, col2, col3 = st.columns(3)
     with col1:
         cantidad = st.number_input("Cantidad de números:", min_value=0, max_value=5000, value=0, step=1)
+        key="cant_aleatoria"
     with col2:
         min_val = st.number_input("Valor mínimo:", value=1, step=1)
     with col3:
@@ -238,9 +244,13 @@ if st.button("Ordenar", type="primary"):
             mime="text/plain"
         )
 st.divider()
-if st.button("Finalizar y limpiar datos",type="primary"):
+if st.button("Finalizar y limpiar datos"):
+    nuevo_id = st.session_state.get("uploader_id", 0) + 1
     st.session_state.clear()
+    st.session_state["uploader_id"] = nuevo_id
     st.session_state["entrada_manual"] = ""
+    st.session_state["cant_aleatoria"] = 0
+    st.session_state["origen_datos"] = "Escribir manualmente"
     st.session_state["sesion_finalizada"] = True
     st.rerun()
 
