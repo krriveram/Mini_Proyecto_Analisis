@@ -289,10 +289,11 @@ if st.button("Ordenar", type="primary"):
             label="Descargar lista ordenada (.txt)",
             data=", ".join(map(str, listas_ordenadas[0])),
             file_name="arreglo_ordenado.txt",
-            mime="text/plain"
+            mime="text/plain",
+            type="primary"
         )
 st.divider()
-if st.button("Finalizar y limpiar datos"):
+if st.button("Finalizar y limpiar datos",type="primary"):
     nuevo_id = st.session_state.get("uploader_id", 0) + 1
     st.session_state.clear()
     st.session_state["uploader_id"] = nuevo_id
@@ -304,5 +305,6 @@ if st.button("Finalizar y limpiar datos"):
 
 if st.session_state.pop("sesion_finalizada", False):
     st.info("Sesión finalizada y datos reiniciados. Puedes cerrar esta pestaña o comenzar una nueva prueba.")
+
 
 
