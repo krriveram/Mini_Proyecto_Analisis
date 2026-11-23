@@ -241,7 +241,7 @@ if st.button("Ordenar", type="primary"):
                 )
                 st.error(
                     f"**{nombres_metodos[metodo]}** superó el límite máximo de recursión de Python con "
-                    f"$n={len(arr)}$. Causa: elegir el último elemento como pivote (`arr[high]`) genera "
+                    f"$n={len(arr)}$. Causa: elegir el último elemento -> {arr[-1]} como pivote genera "
                     f"particiones totalmente desequilibradas de profundidad $O(n)$."
                 )
 
@@ -305,6 +305,7 @@ if st.button("Finalizar y limpiar datos",type="primary"):
 
 if st.session_state.pop("sesion_finalizada", False):
     st.info("Sesión finalizada y datos reiniciados. Puedes cerrar esta pestaña o comenzar una nueva prueba.")
+
 
 
 
