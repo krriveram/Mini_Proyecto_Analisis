@@ -1,0 +1,248 @@
+import random
+import re
+import sys
+import time
+import streamlit as st
+
+sys.setrecursionlimit(10000)
+
+st.set_page_config(
+    page_title="Mini Proyecto",
+    page_icon="⚙️",
+    layout="wide",
+)
+
+st.markdown("""
+    <style>
+        /* Oculta el botón Deploy y el menú superior */
+        header[data-testid="stHeader"] { visibility: hidden; }
+    </style>
+""", unsafe_allow_html=True)
+
+# MERGESORT
+# LO RECUPERAMOS DE https://www.geeksforgeeks.org/python/python-program-for-merge-sort/
+def merge(arr, l, m, r):
+    n1 = m - l + 1
+    n2 = r - m
+
+    L = [0] * n1
+    R = [0] * n2
+
+    for i in range(n1):
+        L[i] = arr[l + i]
+    for j in range(n2):
+        R[j] = arr[m + 1 + j]
+
+    i = j = 0
+    k = l
+
+    while i < n1 and j < n2:
+        if L[i] <= R[j]:
+            arr[k] = L[i]
+            i += 1
+        else:
+            arr[k] = R[j]
+            j += 1
+        k += 1
+
+    while i < n1:
+        arr[k] = L[i]
+        i += 1
+        k += 1
+    while j < n2:
+        arr[k] = R[j]
+        j += 1
+        k += 1
+
+def mergeSort(arr, l, r):
+    if l < r:
+        m = l + (r - l) // 2
+        mergeSort(arr, l, m)
+        mergeSort(arr, m + 1, r)
+        merge(arr, l, m, r)
+
+# QUICKSORT 
+# LO RECUPERAMOS DE https://www.geeksforgeeks.org/dsa/python-program-for-quicksort/ 
+def partition(arr, low, high):
+    pivot = arr[high]
+    i = low - 1
+    for j in range(low, high):
+        if arr[j] <= pivot:
+            i += 1
+            arr[i], arr[j] = arr[j], arr[i]
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1
+
+def quick_sort(arr, low, high):
+    if low < high:
+        p = partition(arr, low, high)
+        quick_sort(arr, low, p - 1)
+        quick_sort(arr, p + 1, high)
+
+# HEAPSORT
+# LO RECUPERAMOS DE https://www.geeksforgeeks.org/dsa/python-program-for-heap-sort/ 
+def heapify(arr, n, i):
+    largest = i    
+    l = 2 * i + 1    
+    r = 2 * i + 2  
+
+    if l < n and arr[l] > arr[largest]:
+        largest = l
+
+    if r < n and arr[r] > arr[largest]:
+        largest = r
+
+    if largest != i:
+        arr[i], arr[largest] = arr[largest], arr[i]
+        heapify(arr, n, largest)
+
+def heapSort(arr):
+    n = len(arr)
+
+    for i in range(n // 2 - 1, -1, -1):
+        heapify(arr, n, i)
+
+    for i in range(n - 1, 0, -1):
+        arr[i], arr[0] = arr[0], arr[i]
+        heapify(arr, i, 0)
+
+
+# --- INTERFAZ ---
+st.title("Ordenador de Arreglos")
+
+origen = st.radio(
+    "¿Cómo deseas ingresar los datos?",
+    ["Escribir manualmente", "Subir archivo (.txt / .csv)", "Generar aleatorios"],
+    horizontal=True
+)
+
+arr = []
+
+if origen == "Escribir manualmente":
+    entrada = st.text_input(
+        "Ingrese los números separados por comas:",
+        placeholder="Ej: 12, 11, 13, 5, 6",
+        key="entrada_manual"
+        
+    )
+    if entrada.strip():
+        tokens = [t.strip() for t in entrada.split(",") if t.strip() != ""]
+        try:
+            arr = [int(t) for t in tokens]
+        except ValueError:
+            st.error("Entrada inválida: ingresa únicamente números enteros separados por comas.")
+            arr = []
+
+elif origen == "Subir archivo (.txt / .csv)":
+    archivo = st.file_uploader(
+        "Sube un archivo con números (separados por comas, espacios o saltos de línea):",
+        type=["txt", "csv"]
+    )
+    if archivo is not None:
+        contenido = archivo.read().decode("utf-8")
+        arr = [int(n) for n in re.findall(r"-?\d+", contenido)]
+        st.info(f"Se cargaron **{len(arr)}** números desde `{archivo.name}`.")
+
+else:
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        cantidad = st.number_input("Cantidad de números:", min_value=0, max_value=5000, value=0, step=1)
+    with col2:
+        min_val = st.number_input("Valor mínimo:", value=1, step=1)
+    with col3:
+        max_val = st.number_input("Valor máximo:", value=100, step=1)
+
+    if min_val > max_val:
+        st.error("El valor mínimo no puede ser mayor que el valor máximo.")
+    else:
+        params_actuales = (int(cantidad), int(min_val), int(max_val))
+        if (
+            st.button("Generar nueva lista")
+            or "lista_aleatoria" not in st.session_state
+            or st.session_state.get("params_aleatorios") != params_actuales
+        ):
+            st.session_state.lista_aleatoria = [
+                random.randint(int(min_val), int(max_val)) for _ in range(int(cantidad))
+            ]
+            st.session_state.params_aleatorios = params_actuales
+
+        arr = st.session_state.lista_aleatoria
+        with st.expander("Ver lista generada sin ordenar", expanded=True):
+            st.code(str(arr), language="python")
+
+nombres_metodos = {
+    "MergeSort": "Merge Sort",
+    "QuickSort": "Quick Sort",
+    "HeapSort": "Heap Sort"
+}
+
+metodos_seleccionados = st.multiselect(
+    "Elija uno, varios o los tres métodos de ordenamiento:",
+    options=["MergeSort", "QuickSort", "HeapSort"],
+    default=["MergeSort", "QuickSort", "HeapSort"],
+    format_func=lambda x: nombres_metodos[x]
+)
+
+if st.button("Ordenar", type="primary"):
+    if not arr:
+        st.warning("Por favor, ingresa números, sube un archivo o genera una lista válida.")
+    elif len(arr) < 2:
+        st.warning("Ingresa o carga al menos 2 números válidos para ordenar.")
+    elif not metodos_seleccionados:
+        st.warning("Selecciona al menos un algoritmo de ordenamiento.")
+    else:
+        #resultado_final = []
+        resultados_por_metodo = {}
+        cols_tiempos = st.columns(len(metodos_seleccionados))
+
+        for i, metodo in enumerate(metodos_seleccionados):
+            copia_arr = arr.copy()
+            inicio = time.perf_counter()
+
+            match metodo:
+                case "MergeSort":
+                    mergeSort(copia_arr, 0, len(copia_arr) - 1)
+                case "QuickSort":
+                    quick_sort(copia_arr, 0, len(copia_arr) - 1)
+                case "HeapSort":
+                    heapSort(copia_arr)
+
+            tiempo_ms = (time.perf_counter() - inicio) * 1000
+            resultados_por_metodo[metodo] = copia_arr
+
+            cols_tiempos[i].metric(
+                label=f"Método {nombres_metodos[metodo]}",
+                value=f"{tiempo_ms:.4f} ms"
+            )
+        listas_ordenadas = list(resultados_por_metodo.values())
+        todos_iguales = all(res == listas_ordenadas[0] for res in listas_ordenadas)
+        orden_correcto = listas_ordenadas[0] == sorted(arr)
+        
+        if todos_iguales and orden_correcto:
+            st.success(f"Validación exitosa: los {len(listas_ordenadas)} algoritmos produjeron exactamente el mismo arreglo ordenado ({len(listas_ordenadas[0])} elementos).")
+        else:
+            st.error("Error de consistencia: los algoritmos produjeron resultados distintos.")
+        st.write("Resultado:")
+        st.code(str(listas_ordenadas[0]), language="python")
+
+
+        #st.success(f"Arreglo ordenado ({len(resultado_final)} elementos):")
+        #st.code(str(resultado_final), language="python")
+
+       
+
+        st.download_button(
+            label="Descargar lista ordenada (.txt)",
+            data=", ".join(map(str, listas_ordenadas[0])),
+            file_name="arreglo_ordenado.txt",
+            mime="text/plain"
+        )
+st.divider()
+if st.button("Finalizar y limpiar datos",type="primary"):
+    st.session_state.clear()
+    st.session_state["entrada_manual"] = ""
+    st.session_state["sesion_finalizada"] = True
+    st.rerun()
+
+if st.session_state.pop("sesion_finalizada", False):
+    st.info("Sesión finalizada y datos reiniciados. Puedes cerrar esta pestaña o comenzar una nueva prueba.")
